@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dilgin Trader Bot</title>
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Dilgin Trader Bot</h1>
+      <div class="lang"><a href="?lang=en">English</a> | <a href="?lang=ar">العربية</a></div>
+    </header>
+    <main>
+      <section class="panel">
+        <h2>لوحة التحكم</h2>
+        <p>الوضع: <strong id="mode">dry_run</strong></p>
+        <div class="controls">
+          <button id="startBtn">Start</button>
+          <button id="stopBtn">Stop</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>أحدث الإشارات</h2>
+        <div id="signals"><div class="signal">لا إشارات بعد</div></div>
+      </section>
+
+      <section class="panel">
+        <h2>إعدادات أمان</h2>
+        <p>لربط مفاتيح API — افتح Settings داخل التطبيق بعد تشغيل السيرفر محلياً (لا ترفع مفاتيح على GitHub).</p>
+      </section>
+    </main>
+    <footer>مصمم لـ Dilgin — التشغيل يبدأ محلياً على هاتفك</footer>
+  </div>
+
+<script>
+document.getElementById('startBtn').onclick = ()=> fetch('/start',{method:'POST'}).then(()=>alert('Started'));
+document.getElementById('stopBtn').onclick = ()=> fetch('/stop',{method:'POST'}).then(()=>alert('Stopped'));
+setInterval(()=>fetch('/signals').then(r=>r.json()).then(j=>{
+  const el = document.getElementById('signals');
+  el.innerHTML = (j.length? j.map(s=>`<div class="signal">${s.time} — ${s.pair} — ${s.signal}</div>`).join('') : '<div class="signal">لا إشارات بعد</div>');
+}),3000);
+</script>
+</body>
+    </html>
