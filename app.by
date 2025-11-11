@@ -1,0 +1,40 @@
+# app.py - Dilgin Trader Bot (server for local UI)
+from flask import Flask, render_template, jsonify, request, send_from_directory
+import threading, time, random, os
+app = Flask(__name__, static_folder='static', template_folder='.')
+
+signals = []
+running = False
+
+def generator():
+    global signals, running
+    while running:
+        time.sleep(5)
+        signals.insert(0, {"time": time.strftime('%Y-%m-%d %H:%M:%S'), "pair":"BTC/USDT", "signal": random.choice(['BUY','SELL','WAIT'])})
+        if len(signals)>50: signals = signals[:50]
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/start', methods=['POST'])
+def start():
+    global running
+    if running: return jsonify({'status':'already'})
+    running = True
+    t = threading.Thread(target=generator, daemon=True); t.start()
+    return jsonify({'status':'started'})
+
+@app.route('/stop', methods=['POST'])
+def stop():
+    global running
+    running = False
+    return jsonify({'status':'stopped'})
+
+@app.route('/signals')
+def get_signals():
+    return jsonify(signals)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT',5000))
+    app.run(host='0.0.0.0', port=port)
