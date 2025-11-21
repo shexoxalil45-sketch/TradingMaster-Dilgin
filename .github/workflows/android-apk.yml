@@ -1,0 +1,58 @@
+name: Build Android APK (Flutter)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Java (for Android build)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.10.5'
+
+    - name: Install Android SDK components
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y unzip wget
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd /tmp
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmd.zip
+        unzip -q cmd.zip -d cmd
+        sudo mv cmd/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+
+    - name: Accept Android SDK licenses
+      run: |
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+
+    - name: Flutter pub get
+      run: flutter pub get
+
+    - name: Build release APK
+      run: flutter build apk --release
+      env:
+        JAVA_HOME: /opt/hostedtoolcache/jdk/17.x
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SmartTrading-D366-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
